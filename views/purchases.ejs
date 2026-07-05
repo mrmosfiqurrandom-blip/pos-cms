@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchases / ক্রয় | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .dynamic-item { background: #f9fafb; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+        .item-details { display: flex; gap: 10px; flex: 1; flex-wrap: wrap; }
+        .item-details select, .item-details input { padding: 8px; border: 1px solid #e5e7eb; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases" class="active"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Purchases / ক্রয় ব্যবস্থাপনা</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <!-- Add Purchase Form -->
+                <% if (role === 'owner' || role === 'admin' || role === 'manager') { %>
+                <div class="card">
+                    <div class="card-header">New Purchase / নতুন ক্রয়</div>
+                    <form action="/purchases" method="POST" id="purchaseForm">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label class="form-label">Supplier / সরবরাহকারী *</label>
+                                <select name="supplier_id" class="form-control" required>
+                                    <option value="">Select Supplier</option>
+                                    <% suppliers.forEach(s => { %>
+                                        <option value="<%= s._id %>"><%= s.name %> (<%= s.phone %>)</option>
+                                    <% }) %>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label class="form-label">Paid Amount / পরিশোধিত টাকা</label>
+                                <input type="number" name="paid_amount" class="form-control" value="0" min="0" step="0.01">
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-success" style="width: 100%; height: 42px;">Save Purchase / সংরক্ষণ করুন</button>
+                            </div>
+                        </div>
+
+                        <label class="form-label">Purchase Items / ক্রয়ের পণ্য সমূহ *</label>
+                        <div id="items-container">
+                            <div class="dynamic-item">
+                                <div class="item-details">
+                                    <select id="item-product-0" class="form-control" style="min-width: 200px;">
+                                        <option value="">Select Product</option>
+                                        <% products.forEach(p => { %>
+                                            <option value="<%= p._id %>"><%= p.name %> (<%= p.sku %>)</option>
+                                        <% }) %>
+                                    </select>
+                                    <input type="number" id="item-qty-0" placeholder="Qty" min="1" class="form-control" style="width: 80px;">
+                                    <input type="number" id="item-price-0" placeholder="Unit Price" min="0" step="0.01" class="form-control" style="width: 120px;">
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="addItemToCart(0)">Add</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden input to hold JSON array of items -->
+                        <input type="hidden" name="items" id="items-hidden" required>
+
+                        <div style="margin-top: 15px; padding: 10px; background: #f0fdf4; border-radius: 6px;">
+                            <strong>Items to submit:</strong>
+                            <div id="items-list" style="margin-top: 10px; color: #6b7280;">No items added yet.</div>
+                        </div>
+                    </form>
+                </div>
+                <% } %>
+
+                <!-- Purchases History Table -->
+                <div class="card">
+                    <div class="card-header">Purchase History / ক্রয় ইতিহাস</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date / তারিখ</th>
+                                    <th>Supplier / সরবরাহকারী</th>
+                                    <th>Total Amount / মোট টাকা</th>
+                                    <th>Paid / পরিশোধ</th>
+                                    <th>Due / বকেয়া</th>
+                                    <th>Status</th>
+                                    <th>Recorded By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% purchases.forEach(p => { %>
+                                    <tr>
+                                        <td><%= moment(p.created_at).format('DD MMM YYYY, hh:mm A') %></td>
+                                        <td><%= p.supplier_id ? p.supplier_id.name : 'Deleted' %></td>
+                                        <td><%= formatBDT(p.total_amount) %></td>
+                                        <td><%= formatBDT(p.paid_amount) %></td>
+                                        <td style="color: <%= p.due_amount > 0 ? '#dc2626' : '#16a34a' %>;"><%= formatBDT(p.due_amount) %></td>
+                                        <td>
+                                            <% if(p.payment_status === 'paid') { %>
+                                                <span class="btn btn-success btn-sm" style="pointer-events:none;">Paid</span>
+                                            <% } else if(p.payment_status === 'partial') { %>
+                                                <span class="btn btn-warning btn-sm" style="pointer-events:none;">Partial</span>
+                                            <% } else { %>
+                                                <span class="btn btn-danger btn-sm" style="pointer-events:none;">Due</span>
+                                            <% } %>
+                                        </td>
+                                        <td><%= p.created_by ? p.created_by.full_name : 'System' %></td>
+                                    </tr>
+                                <% }) %>
+                                <% if (purchases.length === 0) { %>
+                                    <tr><td colspan="7" style="text-align:center; padding:30px; color:#6b7280;">No purchases recorded yet.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Map products to easily get names in JS
+        const productsMap = <%- JSON.stringify(products) %>;
+        
+        let purchaseItems = [];
+        let itemCount = 1; // Starts at 1 because 0 is hardcoded in HTML
+
+        function addItemToCart(idIndex) {
+            const prodSelect = document.getElementById(`item-product-${idIndex}`);
+            const qtyInput = document.getElementById(`item-qty-${idIndex}`);
+            const priceInput = document.getElementById(`item-price-${idIndex}`);
+
+            const productId = prodSelect.value;
+            const qty = Number(qtyInput.value);
+            const unitPrice = Number(priceInput.value);
+
+            if (!productId || !qty || !unitPrice) {
+                return alert("Please select product, quantity, and unit price.");
+            }
+
+            purchaseItems.push({
+                product_id: productId,
+                qty: qty,
+                unit_price: unitPrice
+            });
+
+            // Reset inputs
+            prodSelect.value = '';
+            qtyInput.value = '';
+            priceInput.value = '';
+
+            renderItemsList();
+        }
+
+        function removeItem(index) {
+            purchaseItems.splice(index, 1);
+            renderItemsList();
+        }
+
+        function renderItemsList() {
+            const listEl = document.getElementById('items-list');
+            const hiddenInput = document.getElementById('items-hidden');
+
+            if (purchaseItems.length === 0) {
+                listEl.innerHTML = 'No items added yet.';
+                hiddenInput.value = '';
+                return;
+            }
+
+            hiddenInput.value = JSON.stringify(purchaseItems);
+
+            listEl.innerHTML = purchaseItems.map((item, i) => {
+                const prod = productsMap.find(p => p._id === item.product_id);
+                const name = prod ? prod.name : 'Unknown';
+                const total = item.qty * item.unit_price;
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; background:white; padding:5px 10px; border:1px solid #e5e7eb; border-radius:4px;">
+                        <span>${name} (Qty: ${item.qty} x ৳${item.unit_price}) = <strong>৳${total.toFixed(2)}</strong></span>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(${i})">X</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Form validation before submit
+        document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+            if (purchaseItems.length === 0) {
+                e.preventDefault();
+                alert("Please add at least one item to the purchase.");
+            }
+        });
+
+        // Close sidebar on mobile click
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
