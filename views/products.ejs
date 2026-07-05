@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products / পণ্য | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow: auto; }
+        .modal-content { background: #fff; margin: 50px auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products" class="active"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Products / পণ্য ব্যবস্থাপনা</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>All Products /সকল পণ্য (<%= products.length %>)</span>
+                        <button class="btn btn-primary btn-sm" onclick="document.getElementById('addModal').style.display='block'">+ Add Product / নতুন পণ্য</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Name / নাম</th>
+                                    <th>SKU</th>
+                                    <th>Category</th>
+                                    <th>Purchase Price / ক্রয়মূল্য</th>
+                                    <th>Sale Price / বিক্রয়মূল্য</th>
+                                    <th>Stock / স্টক</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% products.forEach(p => { %>
+                                    <tr>
+                                        <td>
+                                            <% if(p.product_image) { %>
+                                                <img src="<%= p.product_image %>" alt="img" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                                            <% } else { %>
+                                                <div style="width:40px;height:40px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;border-radius:4px;">📦</div>
+                                            <% } %>
+                                        </td>
+                                        <td><strong><%= p.name %></strong><br><small style="color:#6b7280;"><%= p.barcode || 'No barcode' %></small></td>
+                                        <td><%= p.sku %></td>
+                                        <td><%= p.category_id ? p.category_id.name : 'Uncategorized' %></td>
+                                        <td><%= formatBDT(p.purchase_price) %></td>
+                                        <td><%= formatBDT(p.sale_price) %></td>
+                                        <td>
+                                            <span style="font-weight:bold; <%= p.stock_qty <= p.low_stock_alert_qty ? 'color:#dc2626;' : '' %>">
+                                                <%= p.stock_qty %> <%= p.unit %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <% if (p.is_active) { %>
+                                                <span class="btn btn-success btn-sm" style="pointer-events:none;">Active</span>
+                                            <% } else { %>
+                                                <span class="btn btn-secondary btn-sm" style="pointer-events:none; background:#6b7280; color:white;">Inactive</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                                <% if (products.length === 0) { %>
+                                    <tr><td colspan="8" style="text-align:center; padding:30px; color:#6b7280;">No products found. Add your first product!</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="card-header">
+                <span>Add New Product / নতুন পণ্য যোগ করুন</span>
+                <span style="cursor:pointer; font-size:24px;" onclick="document.getElementById('addModal').style.display='none'">&times;</span>
+            </div>
+            
+            <form action="/products" method="POST" enctype="multipart/form-data">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Product Name / পণ্যের নাম *</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SKU *</label>
+                        <input type="text" name="sku" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Barcode (Optional)</label>
+                        <input type="text" name="barcode" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category / বিভাগ</label>
+                        <select name="category_id" class="form-control">
+                            <option value="">-- Select Category --</option>
+                            <% categories.forEach(c => { %>
+                                <option value="<%= c._id %>"><%= c.name %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Unit / একক</label>
+                        <select name="unit" class="form-control">
+                            <option value="pcs">Pieces (পিস)</option>
+                            <option value="kg">Kilogram (কেজি)</option>
+                            <option value="liter">Liter (লিটার)</option>
+                            <option value="box">Box (বক্স)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Product Image / ছবি</label>
+                        <input type="file" name="product_image" class="form-control" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Purchase Price / ক্রয়মূল্য *</label>
+                        <input type="number" step="0.01" name="purchase_price" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sale Price / বিক্রয়মূল্য *</label>
+                        <input type="number" step="0.01" name="sale_price" class="form-control" required min="0">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Opening Stock / প্রাথমিক স্টক *</label>
+                        <input type="number" name="stock_qty" class="form-control" required min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Low Stock Alert Qty</label>
+                        <input type="number" name="low_stock_alert_qty" class="form-control" min="0" value="5">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Save Product / সংরক্ষণ করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Close modal if clicking outside of modal-content
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target == modal) modal.style.display = "none";
+        }
+        // Close sidebar on mobile click
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
