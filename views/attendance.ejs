@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance / উপস্থিতি | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance" class="active"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Staff Attendance / কর্মী উপস্থিতি</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <!-- Check In Action -->
+                <div class="card" style="text-align: center; padding: 30px;">
+                    <h3 style="margin-bottom: 10px;">Date: <%= moment(today).format('dddd, DD MMMM YYYY') %></h3>
+                    <p style="color: #6b7280; margin-bottom: 20px;">Click below to mark your attendance for today / আজকের উপস্থিতি নিতে নিচের বাটনে ক্লিক করুন</p>
+                    <form action="/attendance/check-in" method="POST" style="display: inline-block;">
+                        <button type="submit" class="btn btn-success" style="padding: 15px 40px; font-size: 18px; border-radius: 8px;">
+                            ⏱️ Check-In / চেক-ইন
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Today's Attendance Table -->
+                <div class="card">
+                    <div class="card-header">Today's Records / আজকের রেকর্ড (<%= records.length %>)</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Staff Name / নাম</th>
+                                    <th>Role / পদবি</th>
+                                    <th>Check-In / প্রবেশ</th>
+                                    <th>Check-Out / বের হওয়া</th>
+                                    <th>Status / অবস্থা</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% records.forEach(r => { %>
+                                    <tr>
+                                        <td><strong><%= r.user_id ? r.user_id.full_name : 'Unknown' %></strong></td>
+                                        <td style="text-transform: capitalize;"><%= r.user_id ? r.user_id.role : '-' %></td>
+                                        <td><%= r.check_in || '-' %></td>
+                                        <td><%= r.check_out || '<span style="color:#f59e0b;">Working...</span>' %></td>
+                                        <td>
+                                            <% if(r.status === 'present') { %>
+                                                <span class="btn btn-success btn-sm" style="pointer-events:none;">Present / উপস্থিত</span>
+                                            <% } else if(r.status === 'late') { %>
+                                                <span class="btn btn-warning btn-sm" style="pointer-events:none;">Late / বিলম্ব</span>
+                                            <% } else { %>
+                                                <span class="btn btn-danger btn-sm" style="pointer-events:none;">Absent / অনুপস্থিত</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                                <% if (records.length === 0) { %>
+                                    <tr><td colspan="5" style="text-align:center; padding:30px; color:#6b7280;">No check-ins recorded yet today.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
