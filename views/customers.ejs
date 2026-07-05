@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers / গ্রাহক | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers" class="active"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Customers / গ্রাহক ব্যবস্থাপনা</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <!-- Add Customer Form -->
+                <div class="card">
+                    <div class="card-header">Add New Customer / নতুন গ্রাহক যোগ করুন</div>
+                    <form action="/customers" method="POST" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 2; margin-bottom: 0; min-width: 200px;">
+                            <label class="form-label">Customer Name / গ্রাহকের নাম *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="e.g. Karim Uddin">
+                        </div>
+                        <div class="form-group" style="flex: 1; margin-bottom: 0; min-width: 150px;">
+                            <label class="form-label">Phone / ফোন *</label>
+                            <input type="tel" name="phone" class="form-control" required placeholder="01XXXXXXXXX">
+                        </div>
+                        <div class="form-group" style="flex: 2; margin-bottom: 0; min-width: 200px;">
+                            <label class="form-label">Address / ঠিকানা</label>
+                            <input type="text" name="address" class="form-control" placeholder="Customer address">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="height: 42px;">Add Customer / যোগ করুন</button>
+                    </form>
+                </div>
+
+                <!-- Customers List -->
+                <div class="card">
+                    <div class="card-header">All Customers /সকল গ্রাহক (<%= customers.length %>)</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name / নাম</th>
+                                    <th>Phone / ফোন</th>
+                                    <th>Address / ঠিকানা</th>
+                                    <th>Total Due / মোট বকেয়া</th>
+                                    <th>Loyalty Points / পয়েন্ট</th>
+                                    <th>Registered / তারিখ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% customers.forEach(c => { %>
+                                    <tr>
+                                        <td><strong><%= c.name %></strong></td>
+                                        <td><%= c.phone %></td>
+                                        <td><%= c.address || '-' %></td>
+                                        <td style="color: <%= c.due_amount > 0 ? '#dc2626' : '#16a34a' %>; font-weight: bold;">
+                                            <%= formatBDT(c.due_amount) %>
+                                            <% if (c.due_amount > 0) { %>
+                                                <br><small style="color:#dc2626; cursor:pointer;" title="Feature to collect due can be added here">Collect Due / আদায়</small>
+                                            <% } %>
+                                        </td>
+                                        <td><%= c.loyalty_points %></td>
+                                        <td><%= moment(c.created_at).format('DD MMM YYYY') %></td>
+                                    </tr>
+                                <% }) %>
+                                <% if (customers.length === 0) { %>
+                                    <tr><td colspan="6" style="text-align:center; padding:30px; color:#6b7280;">No customers found. Add your first customer!</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
