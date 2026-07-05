@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories / বিভাগ | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories" class="active"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Categories / বিভাগ ব্যবস্থাপনা</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <!-- Add Category Form -->
+                <% if (role === 'owner' || role === 'admin' || role === 'manager') { %>
+                <div class="card">
+                    <div class="card-header">Add New Category / নতুন বিভাগ যোগ করুন</div>
+                    <form action="/categories" method="POST" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 2; margin-bottom: 0; min-width: 200px;">
+                            <label class="form-label">Category Name / বিভাগের নাম *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="e.g. Beverages / পানীয়">
+                        </div>
+                        <div class="form-group" style="flex: 2; margin-bottom: 0; min-width: 200px;">
+                            <label class="form-label">Parent Category / প্রধান বিভাগ (Optional)</label>
+                            <select name="parent_id" class="form-control">
+                                <option value="">-- None / নেই --</option>
+                                <% categories.forEach(c => { %>
+                                    <option value="<%= c._id %>"><%= c.name %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="height: 42px;">Add Category / যোগ করুন</button>
+                    </form>
+                </div>
+                <% } %>
+
+                <!-- Categories List -->
+                <div class="card">
+                    <div class="card-header">All Categories /সকল বিভাগ (<%= categories.length %>)</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name / নাম</th>
+                                    <th>Parent Category / প্রধান বিভাগ</th>
+                                    <th>Created / তৈরির তারিখ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% categories.forEach(c => { %>
+                                    <tr>
+                                        <td>
+                                            <strong><%= c.name %></strong>
+                                            <% if (!c.parent_category_id) { %>
+                                                <span style="background:#e0e7ff; color:#4f46e5; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px;">Parent</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <%= c.parent_category_id ? c.parent_category_id.name : '<span style="color:#9ca3af;">-</span>' %>
+                                        </td>
+                                        <td><%= moment(c.created_at).format('DD MMM YYYY') %></td>
+                                    </tr>
+                                <% }) %>
+                                <% if (categories.length === 0) { %>
+                                    <tr><td colspan="3" style="text-align:center; padding:30px; color:#6b7280;">No categories found.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
