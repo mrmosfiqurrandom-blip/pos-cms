@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard / ড্যাশবোর্ড | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <span>POS-BMS</span>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard" class="active"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                
+                <div class="header-right">
+                    <div class="notification-badge" title="Notifications">
+                        🔔 
+                        <% if(notifications.length > 0) { %>
+                            <span class="badge"><%= notifications.length %></span>
+                        <% } %>
+                    </div>
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm no-print">Logout</a>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <% if (success_msg) { %>
+                    <div class="alert alert-success"><%= success_msg %></div>
+                <% } %>
+                <% if (error_msg) { %>
+                    <div class="alert alert-danger"><%= error_msg %></div>
+                <% } %>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <div class="stat-title">Today's Sales / আজকের বিক্রয়</div>
+                        <div class="stat-value"><%= formatBDT(todaySalesTotal) %></div>
+                        <small><%= todayTxCount %> Transactions</small>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-title">Total Customer Due / মোট বকেয়া</div>
+                        <div class="stat-value"><%= formatBDT(totalDueAmount) %></div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-title">Low Stock Items / কম স্টক</div>
+                        <div class="stat-value"><%= lowStockCount %></div>
+                        <small>Needs restocking</small>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Active Users / সক্রিয় ইউজার</div>
+                        <div class="stat-value">1</div>
+                        <small>Online now</small>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                    <!-- Sales Trend Chart -->
+                    <div class="card">
+                        <div class="card-header">Sales Trend (Last 7 Days) / বিক্রয় ট্রেন্ড</div>
+                        <canvas id="salesChart" height="100"></canvas>
+                    </div>
+
+                    <!-- Recent Notifications -->
+                    <div class="card">
+                        <div class="card-header">Recent Alerts / সাম্প্রতিক নোটিশ</div>
+                        <% if(notifications.length === 0) { %>
+                            <p style="color: #6b7280;">No new notifications.</p>
+                        <% } else { %>
+                            <ul style="list-style: none; padding: 0;">
+                                <% notifications.forEach(n => { %>
+                                    <li style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px;">
+                                        <strong><%= n.type === 'low_stock' ? '⚠️ Low Stock' : 'ℹ️ Info' %></strong><br>
+                                        <%= n.message %><br>
+                                        <small style="color: #9ca3af;"><%= moment(n.created_at).fromNow() %></small>
+                                    </li>
+                                <% }) %>
+                            </ul>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Chart Logic -->
+    <script>
+        // Parse server-sent trend data
+        const trendData = <%- salesTrend %>;
+        
+        const labels = trendData.map(d => d._id);
+        const data = trendData.map(d => d.total);
+
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sales (৳)',
+                    data: data,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Close sidebar on mobile when clicking outside
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
