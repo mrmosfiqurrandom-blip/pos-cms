@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Terminal | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="background-color: #e5e7eb; overflow: hidden;">
+
+    <!-- Minimal Header for POS -->
+    <header class="top-header" style="background: #1f2937; color: white; position: relative;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="/dashboard" style="color: white; font-size: 20px;" title="Back to Dashboard">⬅️</a>
+            <h2 style="font-size: 18px; font-weight: bold;">POS Terminal / পয়েন্ট অফ সেল</h2>
+        </div>
+        <div class="header-right" style="color: white;">
+            <span>👤 <%= user %></span>
+            <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+        </div>
+    </header>
+
+    <!-- POS Container Grid -->
+    <div class="pos-container" style="height: calc(100vh - 60px); padding: 10px;">
+        
+        <!-- Left: Products Area -->
+        <div class="pos-products-area">
+            <div class="pos-search-bar">
+                <input type="text" id="pos-search" class="form-control" placeholder="Scan barcode or search by name/SKU... (F2)" autocomplete="off">
+            </div>
+            
+            <div class="pos-product-grid" id="product-grid">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+
+        <!-- Right: Cart Area -->
+        <div class="pos-cart-area">
+            <div class="cart-header">
+                <span>Current Sale / বিক্রয়</span>
+                <span id="item-count">0 Items</span>
+            </div>
+
+            <div class="cart-items" id="cart-items">
+                <p style="text-align:center; color:#9ca3af; margin-top:20px;">Cart is empty</p>
+            </div>
+
+            <div class="cart-summary">
+                <div class="cart-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal-val">৳0.00</span>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:12px; width:60px;">Discount:</span>
+                    <input type="number" id="overall-discount" class="form-control" value="0" min="0" style="padding:5px; background:#4b5563; color:white; border:none;">
+                    <span id="discount-val" style="margin-left:auto;">- ৳0.00</span>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:12px; width:60px;">VAT (%):</span>
+                    <input type="number" id="vat-rate" class="form-control" value="0" min="0" max="100" style="padding:5px; background:#4b5563; color:white; border:none;">
+                    <span id="vat-val" style="margin-left:auto;">+ ৳0.00</span>
+                </div>
+                <div class="cart-row grand-total">
+                    <span>TOTAL:</span>
+                    <span id="total-val">৳0.00</span>
+                </div>
+            </div>
+
+            <!-- Payment & Checkout Actions -->
+            <div class="cart-checkout-actions">
+                <div style="display:flex; gap:10px; margin-bottom:5px;">
+                    <select id="customer-select" class="form-control" style="padding:8px; background:#4b5563; color:white; border:none;">
+                        <option value="">Walk-in Customer</option>
+                        <% customers.forEach(c => { %>
+                            <option value="<%= c._id %>"><%= c.name %> (<%= c.phone %>)</option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-bottom:5px;">
+                    <select id="payment-method" class="form-control" style="padding:8px; background:#4b5563; color:white; border:none; width: 40%;">
+                        <option value="cash">Cash</option>
+                        <option value="bkash">bKash</option>
+                        <option value="nagad">Nagad</option>
+                        <option value="card">Card</option>
+                        <option value="bank">Bank</option>
+                    </select>
+                    <input type="number" id="paid-amount" class="form-control" placeholder="Paid Amount" value="0" min="0" style="padding:8px; background:#4b5563; color:white; border:none;">
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 14px; color: #f87171;">
+                    <span>Change/Due:</span>
+                    <span id="due-val">৳0.00</span>
+                </div>
+
+                <button id="checkout-btn" class="btn btn-success" style="width: 100%; padding: 15px; font-size: 18px; margin-top: 10px;" onclick="checkout()" disabled>
+                    Checkout / পেমেন্ট (F9)
+                </button>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-warning" style="flex:1;" onclick="holdCurrentSale()">Hold / হোল্ড</button>
+                    <button class="btn btn-danger" style="flex:1;" onclick="if(confirm('Clear cart?')){ cart=[]; updateCartUI(); }">Clear</button>
+                </div>
+
+                <% if (heldSales.length > 0) { %>
+                    <div style="margin-top: 10px; max-height: 100px; overflow-y: auto; background: #374151; padding: 10px; border-radius: 6px;">
+                        <small style="color: #d1d5db;">Parked Sales:</small>
+                        <% heldSales.forEach(h => { %>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px; font-size:12px;">
+                                <span><%= h.items.length %> Items - <%= formatBDT(h.subtotal) %></span>
+                                <a href="#" onclick="resumeHeld('<%= h._id %>')" style="color: #60a5fa; font-size: 11px;">Resume</a>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pass server data to frontend JS safely
+        window.initialProducts = <%- JSON.stringify(products) %>;
+        window.searchResults = [];
+        
+        // Helper to resume held sale (fetches data and populates cart)
+        async function resumeHeld(saleId) {
+            try {
+                // For simplicity, since we don't have a dedicated get API, 
+                // we'll use the data already present in the view via EJS
+                const heldSalesData = <%- JSON.stringify(heldSales) %>;
+                const sale = heldSalesData.find(s => s._id === saleId);
+                if (sale) {
+                    cart = sale.items.map(item => ({
+                        product_id: item.product_id._id || item.product_id,
+                        name: item.product_id.name || 'Unknown Product',
+                        sale_price: item.unit_price,
+                        qty: item.qty,
+                        discount: item.discount
+                    }));
+                    currentHeldSaleId = saleId;
+                    if(sale.customer_id) {
+                        document.getElementById('customer-select').value = sale.customer_id._id || sale.customer_id;
+                    }
+                    updateCartUI();
+                    alert('Sale resumed!');
+                }
+            } catch (err) {
+                alert('Error resuming sale');
+            }
+        }
+    </script>
+    <script src="/js/pos.js"></script>
+</body>
+</html>
