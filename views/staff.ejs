@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff / কর্মী | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow: auto; }
+        .modal-content { background: #fff; margin: 50px auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff" class="active"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Staff Management / কর্মী ব্যবস্থাপনা</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <!-- Action Bar -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>All Staff / সকল কর্মী (<%= staff.length %>)</span>
+                        <button class="btn btn-primary btn-sm" onclick="document.getElementById('addModal').style.display='block'">+ Add Staff / নতুন কর্মী</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name / নাম</th>
+                                    <th>Email / ইমেইল</th>
+                                    <th>Phone / ফোন</th>
+                                    <th>Role / ভূমিকা</th>
+                                    <th>Status / অবস্থা</th>
+                                    <th>Last Login / শেষ লগইন</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% staff.forEach(s => { %>
+                                    <tr>
+                                        <td><strong><%= s.full_name %></strong></td>
+                                        <td><%= s.email %></td>
+                                        <td><%= s.phone || '-' %></td>
+                                        <td>
+                                            <span class="btn btn-sm btn-primary" style="pointer-events:none; text-transform: capitalize;">
+                                                <%= s.role %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <% if (s.is_active) { %>
+                                                <span class="btn btn-success btn-sm" style="pointer-events:none;">Active</span>
+                                            <% } else { %>
+                                                <span class="btn btn-secondary btn-sm" style="pointer-events:none; background:#6b7280; color:white;">Inactive</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <%= s.last_login ? moment(s.last_login).format('DD MMM YYYY, hh:mm A') : '<span style="color:#9ca3af;">Never</span>' %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                                <% if (staff.length === 0) { %>
+                                    <tr><td colspan="6" style="text-align:center; padding:30px; color:#6b7280;">No staff members found.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Staff Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="card-header">
+                <span>Add New Staff / নতুন কর্মী যোগ করুন</span>
+                <span style="cursor:pointer; font-size:24px;" onclick="document.getElementById('addModal').style.display='none'">&times;</span>
+            </div>
+            
+            <form action="/staff" method="POST">
+                <div class="form-group">
+                    <label class="form-label">Full Name / পুরো নাম *</label>
+                    <input type="text" name="full_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email / ইমেইল *</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone / ফোন</label>
+                    <input type="tel" name="phone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password / পাসওয়ার্ড *</label>
+                    <input type="password" name="password" class="form-control" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role / ভূমিকা *</label>
+                    <select name="role" class="form-control" required>
+                        <option value="admin">Admin</option>
+                        <option value="manager" selected>Manager</option>
+                        <option value="cashier">Cashier</option>
+                        <option value="staff">Staff</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account / অ্যাকাউন্ট তৈরি করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target == modal) modal.style.display = "none";
+        }
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
