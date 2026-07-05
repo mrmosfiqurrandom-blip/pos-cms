@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report / বিক্রয় রিপোর্ট | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales" class="active"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Sales Report / বিক্রয় রিপোর্ট</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <!-- Filters Card -->
+                <div class="card">
+                    <form action="/reports/sales" method="GET" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+                            <label class="form-label">Start Date / শুরু তারিখ</label>
+                            <input type="date" name="start_date" class="form-control" value="<%= start_date %>">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+                            <label class="form-label">End Date / শেষ তারিখ</label>
+                            <input type="date" name="end_date" class="form-control" value="<%= end_date %>">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="height: 42px;">Filter / ফিল্টার</button>
+                        <a href="/reports/sales/excel?start_date=<%= start_date %>&end_date=<%= end_date %>" class="btn btn-success" style="height: 42px; text-decoration: none;">Export to Excel / এক্সেল</a>
+                    </form>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <div class="stat-title">Total Sales / মোট বিক্রয়</div>
+                        <div class="stat-value"><%= formatBDT(report.totalSales) %></div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-title">Total Due / মোট বকেয়া</div>
+                        <div class="stat-value"><%= formatBDT(report.totalDue) %></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Transactions / লেনদেন সংখ্যা</div>
+                        <div class="stat-value"><%= report.txCount %></div>
+                    </div>
+                </div>
+
+                <!-- Sales Data Table -->
+                <div class="card">
+                    <div class="card-header">Invoice Details / চালান বিবরণ</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Invoice / চালান নং</th>
+                                    <th>Date / তারিখ</th>
+                                    <th>Customer / গ্রাহক</th>
+                                    <th>Total / মোট</th>
+                                    <th>Payment / পেমেন্ট</th>
+                                    <th>Cashier / ক্যাশিয়ার</th>
+                                    <th>Receipt / রিসিট</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% salesList.forEach(sale => { %>
+                                    <tr>
+                                        <td><strong><%= sale.invoice_no %></strong></td>
+                                        <td><%= moment(sale.created_at).format('DD MMM YYYY, hh:mm A') %></td>
+                                        <td><%= sale.customer_id ? sale.customer_id.name : 'Walk-in' %></td>
+                                        <td><strong><%= formatBDT(sale.grand_total) %></strong></td>
+                                        <td>
+                                            <span class="btn btn-sm <%= sale.payment_method === 'cash' ? 'btn-success' : 'btn-primary' %>" style="pointer-events:none; text-transform: capitalize;">
+                                                <%= sale.payment_method %>
+                                            </span>
+                                            <% if (sale.due_amount > 0) { %>
+                                                <div style="color: #dc2626; font-size: 12px; margin-top: 4px;">Due: <%= formatBDT(sale.due_amount) %></div>
+                                            <% } %>
+                                        </td>
+                                        <td><%= sale.sold_by ? sale.sold_by.full_name : 'Unknown' %></td>
+                                        <td>
+                                            <a href="/invoice/<%= sale._id %>/pdf" target="_blank" class="btn btn-warning btn-sm">View PDF</a>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                                <% if (salesList.length === 0) { %>
+                                    <tr><td colspan="7" style="text-align:center; padding:30px; color:#6b7280;">No sales found for this period.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
