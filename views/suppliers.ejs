@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suppliers / সরবরাহকারী | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers" class="active"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Suppliers / সরবরাহকারী ব্যবস্থাপনা</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <!-- Add Supplier Form -->
+                <% if (role === 'owner' || role === 'admin') { %>
+                <div class="card">
+                    <div class="card-header">Add New Supplier / নতুন সরবরাহকারী যোগ করুন</div>
+                    <form action="/suppliers" method="POST" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 2; margin-bottom: 0; min-width: 200px;">
+                            <label class="form-label">Supplier Name / সরবরাহকারীর নাম *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="e.g. XYZ Distributors">
+                        </div>
+                        <div class="form-group" style="flex: 1; margin-bottom: 0; min-width: 150px;">
+                            <label class="form-label">Phone / ফোন *</label>
+                            <input type="tel" name="phone" class="form-control" required placeholder="01XXXXXXXXX">
+                        </div>
+                        <div class="form-group" style="flex: 2; margin-bottom: 0; min-width: 200px;">
+                            <label class="form-label">Address / ঠিকানা</label>
+                            <input type="text" name="address" class="form-control" placeholder="Warehouse or shop address">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="height: 42px;">Add Supplier / যোগ করুন</button>
+                    </form>
+                </div>
+                <% } %>
+
+                <!-- Suppliers List -->
+                <div class="card">
+                    <div class="card-header">All Suppliers /সকল সরবরাহকারী (<%= suppliers.length %>)</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name / নাম</th>
+                                    <th>Phone / ফোন</th>
+                                    <th>Address / ঠিকানা</th>
+                                    <th>Total Due / মোট বকেয়া</th>
+                                    <th>Registered / তারিখ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% suppliers.forEach(s => { %>
+                                    <tr>
+                                        <td><strong><%= s.name %></strong></td>
+                                        <td><%= s.phone %></td>
+                                        <td><%= s.address || '-' %></td>
+                                        <td style="color: <%= s.due_amount > 0 ? '#dc2626' : '#16a34a' %>; font-weight: bold;">
+                                            <%= formatBDT(s.due_amount) %>
+                                        </td>
+                                        <td><%= moment(s.created_at).format('DD MMM YYYY') %></td>
+                                    </tr>
+                                <% }) %>
+                                <% if (suppliers.length === 0) { %>
+                                    <tr><td colspan="5" style="text-align:center; padding:30px; color:#6b7280;">No suppliers found. Add your first supplier!</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
