@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice / চালান | POS-BMS</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .no-print {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .no-print button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        /* Thermal Receipt Style */
+        .receipt-container {
+            width: 300px; /* Approx 80mm */
+            background: white;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            color: #000;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .separator { border-top: 1px dashed #000; margin: 10px 0; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 2px 0; text-align: left; }
+        th { border-bottom: 1px solid #000; }
+        .col-name { width: 50%; }
+        .col-qty { width: 15%; text-align: center; }
+        .col-price { width: 15%; text-align: right; }
+        .col-total { width: 20%; text-align: right; }
+
+        .totals-table { margin-top: 10px; }
+        .totals-table td { padding: 1px 0; }
+        .totals-table .total-col { text-align: right; }
+
+        @media print {
+            body { background: none; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+            .receipt-container { box-shadow: none; width: 100%; max-width: 80mm; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Note: To use this HTML view instead of PDFKit, add a route in server.js:
+         app.get('/invoice/:id/print', isAuthenticated, async (req, res) => {
+             const sale = await Sale.findById(req.params.id).populate('business_id customer_id sold_by items.product_id');
+             res.render('invoice-print', { sale });
+         });
+    -->
+
+    <div class="no-print">
+        <button onclick="window.print()">🖨️ Print Receipt / রিসিট প্রিন্ট করুন</button>
+        <button onclick="window.close()">❌ Close / বন্ধ করুন</button>
+    </div>
+
+    <% if (typeof sale !== 'undefined' && sale) { %>
+        <div class="receipt-container">
+            <!-- Header -->
+            <div class="text-center">
+                <h2 style="margin: 0 0 5px 0; font-size: 18px;"><%= sale.business_id.name %></h2>
+                <% if (sale.business_id.address) { %><div style="font-size: 12px;"><%= sale.business_id.address %></div><% } %>
+                <% if (sale.business_id.phone) { %><div style="font-size: 12px;">Phone: <%= sale.business_id.phone %></div><% } %>
+                <% if (sale.business_id.trade_license_no) { %><div style="font-size: 11px;">License: <%= sale.business_id.trade_license_no %></div><% } %>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Invoice Info -->
+            <div style="font-size: 12px;">
+                <div><span class="bold">Invoice:</span> <%= sale.invoice_no %></div>
+                <div><span class="bold">Date:</span> <%= moment(sale.created_at).format('DD/MM/YYYY hh:mm A') %></div>
+                <div><span class="bold">Cashier:</span> <%= sale.sold_by ? sale.sold_by.full_name : 'N/A' %></div>
+                <% if (sale.customer_id) { %>
+                    <div><span class="bold">Customer:</span> <%= sale.customer_id.name %></div>
+                <% } else { %>
+                    <div><span class="bold">Customer:</span> Walk-in</div>
+                <% } %>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Items Table -->
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-name">Item</th>
+                        <th class="col-qty">Qty</th>
+                        <th class="col-price">Rate</th>
+                        <th class="col-total">Amt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% sale.items.forEach(item => { %>
+                        <tr>
+                            <td class="col-name"><%= item.product_id.name %></td>
+                            <td class="col-qty"><%= item.qty %></td>
+                            <td class="col-price"><%= item.unit_price %></td>
+                            <td class="col-total"><%= (item.qty * item.unit_price) - (item.discount || 0) %></td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+
+            <div class="separator"></div>
+
+            <!-- Totals -->
+            <table class="totals-table">
+                <tr>
+                    <td>Subtotal:</td>
+                    <td class="total-col"><%= sale.subtotal.toFixed(2) %></td>
+                </tr>
+                <% if (sale.discount_total > 0) { %>
+                <tr>
+                    <td>Discount:</td>
+                    <td class="total-col">- <%= sale.discount_total.toFixed(2) %></td>
+                </tr>
+                <% } %>
+                <% if (sale.vat_tax > 0) { %>
+                <tr>
+                    <td>VAT/Tax:</td>
+                    <td class="total-col">+ <%= sale.vat_tax.toFixed(2) %></td>
+                </tr>
+                <% } %>
+                <tr class="bold" style="font-size: 16px; border-top: 2px solid #000;">
+                    <td style="padding-top: 5px;">TOTAL (৳):</td>
+                    <td class="total-col" style="padding-top: 5px;"><%= sale.grand_total.toFixed(2) %></td>
+                </tr>
+                <tr>
+                    <td>Paid (<%= sale.payment_method.toUpperCase() %>):</td>
+                    <td class="total-col"><%= sale.paid_amount.toFixed(2) %></td>
+                </tr>
+                <% if (sale.due_amount > 0) { %>
+                <tr class="bold" style="color: #dc2626;">
+                    <td>Due:</td>
+                    <td class="total-col"><%= sale.due_amount.toFixed(2) %></td>
+                </tr>
+                <% } %>
+            </table>
+
+            <div class="separator"></div>
+
+            <!-- Footer -->
+            <div class="text-center" style="font-size: 12px; margin-top: 10px;">
+                <p style="margin: 0 0 5px 0;">Thank you for your purchase!</p>
+                <p style="margin: 0; color: #6b7280;">ধন্যবাদ! আবার আসবেন।</p>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="receipt-container text-center" style="padding: 50px 20px;">
+            <h2>Invalid Invoice Data</h2>
+            <p>This page must be accessed with a valid sale ID.</p>
+        </div>
+    <% } %>
+
+</body>
+</html>
