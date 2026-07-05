@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenses / খরচ | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses" class="active"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Expenses / খরচ ব্যবস্থাপনা</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <!-- Add Expense Form -->
+                <div class="card">
+                    <div class="card-header">Add New Expense / নতুন খরচ যোগ করুন</div>
+                    <form action="/expenses" method="POST" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 1; margin-bottom: 0; min-width: 180px;">
+                            <label class="form-label">Category / খরচের খাত *</label>
+                            <select name="category" class="form-control" required>
+                                <option value="rent">Rent / ভাড়া</option>
+                                <option value="salary">Salary / বেতন</option>
+                                <option value="utility">Utility / ইউটিলিটি (বিদ্যুৎ, পানি)</option>
+                                <option value="other">Other / অন্যান্য</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1; margin-bottom: 0; min-width: 150px;">
+                            <label class="form-label">Amount (৳) / টাকা *</label>
+                            <input type="number" name="amount" class="form-control" required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group" style="flex: 2; margin-bottom: 0; min-width: 200px;">
+                            <label class="form-label">Note / বিবরণ</label>
+                            <input type="text" name="note" class="form-control" placeholder="e.g. November month rent">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="height: 42px;">Add Expense / যোগ করুন</button>
+                    </form>
+                </div>
+
+                <!-- Expenses List -->
+                <div class="card">
+                    <div class="card-header">Expense History / খরচের ইতিহাস</div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date / তারিখ</th>
+                                    <th>Category / খাত</th>
+                                    <th>Amount / টাকা</th>
+                                    <th>Note / বিবরণ</th>
+                                    <th>Added By / যোগ করেছে</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% expenses.forEach(e => { %>
+                                    <tr>
+                                        <td><%= moment(e.created_at).format('DD MMM YYYY, hh:mm A') %></td>
+                                        <td>
+                                            <span class="btn btn-sm btn-primary" style="pointer-events:none; text-transform: capitalize;">
+                                                <%= e.category %>
+                                            </span>
+                                        </td>
+                                        <td style="font-weight: bold; color: #dc2626;">
+                                            - <%= formatBDT(e.amount) %>
+                                        </td>
+                                        <td><%= e.note || '-' %></td>
+                                        <td><%= e.created_by ? e.created_by.full_name : 'System' %></td>
+                                    </tr>
+                                <% }) %>
+                                <% if (expenses.length === 0) { %>
+                                    <tr><td colspan="5" style="text-align:center; padding:30px; color:#6b7280;">No expenses recorded yet.</td></tr>
+                                <% } %>
+                            </tbody>
+                            <tfoot>
+                                <tr style="background: #f9fafb; font-weight: bold;">
+                                    <td colspan="2" style="text-align: right;">Total / মোট:</td>
+                                    <td style="color: #dc2626;">
+                                        - <%= formatBDT(expenses.reduce((sum, e) => sum + e.amount, 0)) %>
+                                    </td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
