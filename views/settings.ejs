@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings / সেটিংস | POS-BMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .logo-preview { max-width: 150px; max-height: 150px; border: 2px dashed var(--border); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; background: #f9fafb; }
+        .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .settings-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand"><span>POS-BMS</span></div>
+            <ul class="sidebar-menu">
+                <li><a href="/dashboard"><i>📊</i> Dashboard / ড্যাশবোর্ড</a></li>
+                <li><a href="/pos"><i>🛒</i> POS Terminal</a></li>
+                <li><a href="/products"><i>📦</i> Products / পণ্য</a></li>
+                <li><a href="/categories"><i>🏷️</i> Categories / বিভাগ</a></li>
+                <li><a href="/customers"><i>👥</i> Customers / গ্রাহক</a></li>
+                <li><a href="/suppliers"><i>🚚</i> Suppliers / সরবরাহকারী</a></li>
+                <li><a href="/purchases"><i>📥</i> Purchases / ক্রয়</a></li>
+                <li><a href="/expenses"><i>💸</i> Expenses / খরচ</a></li>
+                <li><a href="/reports/sales"><i>📈</i> Reports / রিপোর্ট</a></li>
+                <li><a href="/staff"><i>🧑‍🤝‍🧑</i> Staff / কর্মী</a></li>
+                <li><a href="/attendance"><i>⏱️</i> Attendance / উপস্থিতি</a></li>
+                <li><a href="/settings" class="active"><i>⚙️</i> Settings / সেটিংস</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h3>Business Settings / ব্যবসায়িক সেটিংস</h3>
+                <div class="header-right">
+                    <span>👤 <%= user %></span>
+                    <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <% if (success_msg) { %><div class="alert alert-success"><%= success_msg %></div><% } %>
+                <% if (error_msg) { %><div class="alert alert-danger"><%= error_msg %></div><% } %>
+
+                <div class="card">
+                    <div class="card-header">Business Profile & Receipt Settings / ব্যবসার প্রোফাইল ও রিসিট সেটিংস</div>
+                    
+                    <form action="/settings" method="POST" enctype="multipart/form-data">
+                        <div class="settings-grid">
+                            <!-- Left Column -->
+                            <div>
+                                <div class="form-group">
+                                    <label class="form-label">Business Name / ব্যবসার নাম *</label>
+                                    <input type="text" name="name" class="form-control" value="<%= business.name %>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Phone Number / ফোন নম্বর</label>
+                                    <input type="tel" name="phone" class="form-control" value="<%= business.phone || '' %>">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Address / ঠিকানা</label>
+                                    <textarea name="address" class="form-control" rows="3"><%= business.address || '' %></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Trade License No. / ট্রেড লাইসেন্স</label>
+                                    <input type="text" name="trade_license_no" class="form-control" value="<%= business.trade_license_no || '' %>">
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div>
+                                <div class="form-group">
+                                    <label class="form-label">Shop Logo / দোকানের লোগো</label>
+                                    <div class="logo-preview">
+                                        <% if (business.logo) { %>
+                                            <img src="<%= business.logo %>" alt="Logo">
+                                        <% } else { %>
+                                            <span style="color:#9ca3af; text-align:center; font-size:12px;">No Logo Uploaded<br>নো লোগো</span>
+                                        <% } %>
+                                    </div>
+                                    <input type="file" name="logo" class="form-control" accept="image/*">
+                                    <small style="color:#6b7280;">Max 2MB. Used on receipts/invoices.</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Default VAT/Tax Rate (%) / ভ্যাট/ট্যাক্স হার</label>
+                                    <input type="number" name="tax_rate" class="form-control" value="<%= business.tax_rate || 0 %>" min="0" max="100" step="0.1">
+                                    <small style="color:#6b7280;">This will be auto-filled in POS terminal.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Currency / মুদ্রা</label>
+                                    <input type="text" class="form-control" value="BDT (৳)" disabled>
+                                    <small style="color:#6b7280;">Fixed to Bangladeshi Taka for this region.</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Subscription Plan / সাবস্ক্রিপশন</label>
+                                    <input type="text" class="form-control" value="<%= business.subscription_plan.toUpperCase() %>" disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                            <button type="submit" class="btn btn-primary" style="padding: 12px 30px;">Save Changes / পরিবর্তন সংরক্ষণ করুন</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Preview logo before upload
+        document.querySelector('input[name="logo"]').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewDiv = document.querySelector('.logo-preview');
+                    previewDiv.innerHTML = `<img src="${e.target.result}" alt="Logo Preview">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+</body>
+</html>
